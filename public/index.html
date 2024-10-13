@@ -94,7 +94,8 @@
     .fab-button {
       width: 40px;
       height: 40px;
-      margin-left: 5px;
+      margin-left: 3px;
+      margin-right: 3px;
       border: none;
       border-radius: 50%;
       background-color: #4285F4;
@@ -120,7 +121,7 @@
       max-height: 300px;
       overflow-y: auto;
       width: 250px;
-      z-index: 1000;
+      z-index: 1001;
     }
 
     .popup-menu ul {
@@ -169,24 +170,119 @@
 
   <!-- Floating Input -->
   <div class="floating-input">
-    <input type="text" id="floating-input-field" placeholder="Type here..." />
+    <input type="text" id="floating-input-field" placeholder="Type your prompt here..." />
     <div class="fab-buttons">
       <button id="submit-button" class="fab-button">
-        &#x27A4;
+        &#x27A4; <!-- Submit Button -->
+      </button>
+      <button id="assistant-button" class="fab-button">
+        &#128100; <!-- Assistant Selection Button -->
       </button>
       <button id="menu-button" class="fab-button">
-        &#9776;
+        &#9776; <!-- Menu Button -->
       </button>
+    </div>
+    <!-- Assistant Menu -->
+    <div id="assistant-menu" class="popup-menu">
+      <!-- Assistant list will be populated dynamically -->
     </div>
     <!-- Popup Menu -->
     <div id="popup-menu" class="popup-menu">
-      <!-- Menu items will be populated dynamically -->
+      <!-- Existing chapter/subheading menu -->
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="book-data.js"></script>
   <script>
+const bookData = [
+  {
+    "title": "React for Beginners",
+    "chapters": [
+      {
+        "title": "Chapter 1: Introduction to ReactJS",
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Welcome to the first chapter of \"Mastering the ReactJS Interview.\" In this chapter, we will explore the fundamentals of ReactJS and understand why it has become a pivotal technology in modern web development."
+          },
+          {
+            "type": "bullet-list",
+            "items": [
+              "The evolution of front-end development",
+              "Why ReactJS is popular among developers and companies",
+              "Understanding the component-based architecture"
+            ]
+          },
+          {
+            "type": "subheading",
+            "text": "The Evolution of Front-End Development"
+          },
+          {
+            "type": "paragraph",
+            "text": "Front-end development has significantly evolved from static HTML pages to dynamic, interactive web applications. The need for efficient UI updates and state management led to the creation of JavaScript frameworks and libraries."
+          },
+          {
+            "type": "paragraph",
+            "text": "Traditional approaches involved manipulating the DOM directly, which could be inefficient and lead to complex, hard-to-maintain codebases as applications grew in size."
+          },
+          {
+            "type": "subheading",
+            "text": "Why ReactJS is Popular Among Developers and Companies"
+          },
+          {
+            "type": "paragraph",
+            "text": "ReactJS addresses many of the challenges faced in front-end development. Here are some reasons for its popularity:"
+          },
+          {
+            "type": "bullet-list",
+            "items": [
+              "**Declarative Syntax:** Makes code more predictable and easier to debug.",
+              "**Component-Based Architecture:** Encourages reusability and modular code.",
+              "**Virtual DOM:** Improves performance by minimizing direct DOM manipulations.",
+              "**Strong Community Support:** Extensive ecosystem of tools and libraries.",
+              "**Flexibility:** Can be used with other frameworks and supports React Native for mobile development."
+            ]
+          },
+          {
+            "type": "subheading",
+            "text": "Understanding the Component-Based Architecture"
+          },
+          {
+            "type": "paragraph",
+            "text": "Components are the building blocks of a React application. They allow you to split the UI into independent, reusable pieces that can be managed separately."
+          },
+          {
+            "type": "code",
+            "code": "// Example of a simple React component\nimport React from 'react';\n\nfunction Welcome(props) {\n  return <h1>Hello, {props.name}!</h1>;\n}\n\nexport default Welcome;"
+          },
+          {
+            "type": "paragraph",
+            "text": "In the example above, the `Welcome` component is a functional component that takes `props` as an argument and returns a JSX element."
+          },
+          {
+            "type": "paragraph",
+            "text": "Components can be composed to build complex user interfaces, promoting better organization and maintainability in your codebase."
+          },
+          {
+            "type": "code",
+            "code": "// Composing components\nfunction App() {\n  return (\n    <div>\n      <Welcome name=\"Alice\" />\n      <Welcome name=\"Bob\" />\n      <Welcome name=\"Charlie\" />\n    </div>\n  );\n}"
+          },
+          {
+            "type": "paragraph",
+            "text": "By understanding these core concepts, you'll be well on your way to mastering ReactJS and impressing in your interviews."
+          }
+        ]
+      }
+    ]
+  }
+];
+  </script>
+
+  <!-- Scripts -->
+  <script>
+    // Ensure bookData is available
+    if (typeof bookData === 'undefined') {
+      console.error('bookData is not defined. Make sure book-data.js is included.');
+    }
 
     // Function to convert JSON data to plain text
     function jsonToPlainText(data) {
@@ -366,6 +462,18 @@
       }
     }
 
+    let textEditor, initialText;
+
+    // Ensure bookData is available
+    if (typeof bookData === 'undefined') {
+      console.error('bookData is not defined. Make sure book-data.js is included.');
+    } else {
+      // Load initial text into the text editor from bookData
+      initialText = jsonToPlainText(bookData);
+      textEditor = document.getElementById('text-editor');
+      textEditor.value = initialText;
+    }
+
     // Function to generate PDF
     function generatePDF(content) {
       const doc = new PDFDocument({ autoFirstPage: false });
@@ -438,11 +546,6 @@
       }
     }
 
-    // Load initial text into the text editor from bookData
-    const initialText = jsonToPlainText(bookData);
-    const textEditor = document.getElementById('text-editor');
-    textEditor.value = initialText;
-
     // Function to extract chapters and subheadings
     function extractChaptersAndSubheadings(text) {
       const lines = text.split('\n');
@@ -494,12 +597,62 @@
       }
     });
 
-    // Hide the popup menu when clicking outside
+    // Event listener for the assistant button
+    const assistants = [
+      { id: 'assistant_1', name: 'Assistant 1' },
+      { id: 'assistant_2', name: 'Assistant 2' },
+      { id: 'assistant_3', name: 'Assistant 3' },
+      // ... add more assistants as needed
+    ];
+
+    let selectedAssistant = null;
+
+    function populateAssistantMenu() {
+      const assistantMenu = document.getElementById('assistant-menu');
+      assistantMenu.innerHTML = ''; // Clear existing content
+
+      const ul = document.createElement('ul');
+      assistants.forEach(assistant => {
+        const li = document.createElement('li');
+        li.textContent = assistant.name;
+        li.dataset.assistantId = assistant.id;
+        // Highlight if selected
+        if (selectedAssistant && selectedAssistant.id === assistant.id) {
+          li.style.backgroundColor = '#e0e0e0';
+        }
+        li.addEventListener('click', () => {
+          selectedAssistant = assistant;
+          assistantMenu.style.display = 'none';
+          // Optionally update the assistant button to show selection
+          document.getElementById('assistant-button').style.backgroundColor = '#34A853'; // Google Green
+        });
+        ul.appendChild(li);
+      });
+
+      assistantMenu.appendChild(ul);
+    }
+
+    const assistantButton = document.getElementById('assistant-button');
+    assistantButton.addEventListener('click', () => {
+      const assistantMenu = document.getElementById('assistant-menu');
+      if (assistantMenu.style.display === 'block') {
+        assistantMenu.style.display = 'none';
+      } else {
+        populateAssistantMenu();
+        assistantMenu.style.display = 'block';
+      }
+    });
+
+    // Hide the popup menus when clicking outside
     document.addEventListener('click', function(event) {
-      const isClickInside = document.getElementById('menu-button').contains(event.target) ||
-                            document.getElementById('popup-menu').contains(event.target);
-      if (!isClickInside) {
+      const isClickInsideMenu = menuButton.contains(event.target) ||
+                                document.getElementById('popup-menu').contains(event.target) ||
+                                assistantButton.contains(event.target) ||
+                                document.getElementById('assistant-menu').contains(event.target);
+
+      if (!isClickInsideMenu) {
         document.getElementById('popup-menu').style.display = 'none';
+        document.getElementById('assistant-menu').style.display = 'none';
       }
     });
 
@@ -507,13 +660,51 @@
     const submitButton = document.getElementById('submit-button');
     submitButton.addEventListener('click', () => {
       const inputField = document.getElementById('floating-input-field');
-      const textToAdd = inputField.value.trim();
-      if (textToAdd) {
-        // Append the text to the editor
-        textEditor.value += '\n' + textToAdd;
+      const prompt = inputField.value.trim();
+
+      if (!selectedAssistant) {
+        alert('Please select an assistant before submitting your prompt.');
+        return;
+      }
+
+      if (prompt) {
+        // Get the current JSON data
+        const currentJson = plainTextToJson(textEditor.value);
+
+        // Prepare the request payload
+        const payload = {
+          assistant_id: selectedAssistant.id,
+          prompt: prompt,
+          book_data: currentJson,
+        };
+
+        // Send the REST request
+        fetch('http://my-wrapper.local:3434', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Handle the response from the wrapper
+            // For example, update the editor with new content
+            if (data && data.updated_book_data) {
+              // Convert updated book data back to plain text
+              const updatedText = jsonToPlainText(data.updated_book_data);
+              textEditor.value = updatedText;
+              // Trigger the input event to update the PDF
+              textEditor.dispatchEvent(new Event('input'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while communicating with the assistant.');
+          });
+
+        // Clear the input field
         inputField.value = '';
-        // Trigger the input event to update the PDF
-        textEditor.dispatchEvent(new Event('input'));
       }
     });
 
@@ -538,7 +729,9 @@
     });
 
     // Generate initial PDF
-    generatePDF(textEditor.value);
+    if (typeof textEditor !== 'undefined') {
+      generatePDF(textEditor.value);
+    }
   </script>
 </body>
 </html>
