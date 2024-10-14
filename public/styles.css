@@ -1,0 +1,210 @@
+/* Dark Stone Theme CSS */
+
+/* Base Styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #2e2e2e; /* Dark stone background */
+  color: #d3d3d3; /* Light gray text for readability */
+  font-family: monospace;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  padding: 10px; /* Retained original padding */
+  background-color: #3c3c3c; /* Slightly lighter dark stone */
+  color: #d3d3d3; /* Light gray text */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+}
+
+.logo {
+  flex: 1;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #b0b0b0; /* Medium gray for logo */
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  flex: 2;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li {
+  margin: 0 15px; /* Retained original margin */
+  position: relative;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #d3d3d3; /* Light gray links */
+  font-weight: 500;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+nav ul li a:hover {
+  color: #ffffff; /* White on hover */
+  text-shadow: 0 0 5px #ffffff;
+}
+
+.login {
+  flex: 1;
+  text-align: right;
+}
+
+.login a {
+  text-decoration: none;
+  color: #b0b0b0; /* Medium gray */
+  font-weight: 500;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+.login a:hover {
+  color: #ffffff; /* White on hover */
+  text-shadow: 0 0 5px #ffffff;
+}
+
+.container {
+  display: flex;
+  height: calc(100% - 60px); /* Retained original calculation */
+}
+
+.editor, .preview {
+  flex: 1;
+  overflow: auto;
+  background-color: #3c3c3c; /* Dark stone for content areas */
+  border: 1px solid #555555; /* Darker gray borders */
+  border-radius: 5px;
+  color: #d3d3d3; /* Light gray text */
+}
+
+.editor {
+
+}
+
+.preview {
+  /* Additional preview-specific styles can be added here */
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+  .editor, .preview {
+    height: 50%;
+    border-right: none;
+    border-bottom: 1px solid #555555; /* Adjusted border for vertical layout */
+  }
+}
+
+/* Floating Input Styles */
+.floating-input {
+  width: 90%;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background-color: #3c3c3c; /* Dark stone background */
+  border: 2px solid #555555; /* Dark gray border */
+  border-radius: 25px;
+  padding: 5px 10px; /* Retained original padding */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+  z-index: 1000;
+}
+
+#floating-input-field {
+  border: none;
+  outline: none;
+  padding: 10px; /* Retained original padding */
+  font-size: 16px;
+  flex: 1;
+  background-color: transparent;
+  color: #d3d3d3; /* Light gray text */
+}
+
+#floating-input-field::placeholder {
+  color: #a9a9a9; /* Muted gray placeholder */
+}
+
+.fab-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.fab-button {
+  width: 40px;
+  height: 40px;
+  margin: 0 3px; /* Retained original margins */
+  border: none;
+  border-radius: 50%;
+  background-color: #555555; /* Dark gray background */
+  color: #d3d3d3; /* Light gray text/icons */
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fab-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7); /* Enhanced shadow on hover */
+}
+
+.fab-button:focus {
+  outline: none;
+}
+
+/* Popup Menu Styles */
+.popup-menu {
+  position: absolute;
+  bottom: 60px;
+  right: 10px;
+  background-color: #3c3c3c; /* Dark stone background */
+  border: 2px solid #555555; /* Dark gray border */
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+  display: none;
+  max-height: 300px;
+  overflow-y: auto;
+  width: 250px;
+  z-index: 1001;
+}
+
+.popup-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.popup-menu li {
+  padding: 10px 15px; /* Retained original padding */
+  border-bottom: 1px solid #555555; /* Dark gray border */
+  cursor: pointer;
+  color: #d3d3d3; /* Light gray text */
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.popup-menu li:hover {
+  background-color: #555555; /* Darker gray on hover */
+  color: #ffffff; /* White text on hover */
+}
+
+/* Textarea Styles */
+textarea {
+  border: 1px solid #555555; /* Dark gray border */
+  background-color: #3c3c3c; /* Dark stone background */
+  color: #d3d3d3; /* Light gray text */
+  font-family: inherit;
+  font-size: 16px;
+}
+
+textarea::placeholder {
+  color: #a9a9a9; /* Muted gray placeholder */
+}
