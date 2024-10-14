@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PDF Book Builder</title>
+  <title>BookAI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Include PDFKit and Blob-Stream -->
   <script src="https://unpkg.com/pdfkit@0.15.0/js/pdfkit.standalone.js"></script>
@@ -65,6 +65,7 @@
     /* Floating Input Styles */
 
     .floating-input {
+      width: 90%;
       position: fixed;
       bottom: 20px;
       left: 50%;
@@ -145,7 +146,7 @@
 <body>
   <!-- Header -->
   <header>
-    <div class="logo">PDF Book Builder</div>
+    <div class="logo">BookAI</div>
     <nav>
       <ul>
         <li><a href="#" style="color: #fff;">Home</a></li>
@@ -175,16 +176,9 @@
       <button id="submit-button" class="fab-button">
         &#x27A4; <!-- Submit Button -->
       </button>
-      <button id="assistant-button" class="fab-button">
-        &#128100; <!-- Assistant Selection Button -->
-      </button>
       <button id="menu-button" class="fab-button">
         &#9776; <!-- Menu Button -->
       </button>
-    </div>
-    <!-- Assistant Menu -->
-    <div id="assistant-menu" class="popup-menu">
-      <!-- Assistant list will be populated dynamically -->
     </div>
     <!-- Popup Menu -->
     <div id="popup-menu" class="popup-menu">
@@ -197,9 +191,50 @@
 
   <!-- Scripts -->
   <script>
+
+    let book_outline = null;
+
     // Ensure bookData is available
     if (typeof bookData === 'undefined') {
       console.error('bookData is not defined. Make sure book-data.js is included.');
+    }
+
+    // Utility function to convert JSON lines to JSON objects
+    function jsonLinesToObjects(stream) {
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      return new ReadableStream({
+        async start(controller) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // Save the incomplete line
+            for (const line of lines) {
+              if (line.trim()) {
+                try {
+                  const json = JSON.parse(line);
+                  controller.enqueue(json);
+                } catch (err) {
+                  console.error('Invalid JSON:', err);
+                }
+              }
+            }
+          }
+          if (buffer.trim()) {
+            try {
+              const json = JSON.parse(buffer);
+              controller.enqueue(json);
+            } catch (err) {
+              console.error('Invalid JSON:', err);
+            }
+          }
+          controller.close();
+        },
+      });
     }
 
     // Function to convert JSON data to plain text
@@ -219,6 +254,32 @@
           });
         }
       });
+
+      return text;
+    }
+
+    // Function to convert JSON data to plain text
+    function jsonOutlineToPlainText(data) {
+      let text = `# ${data.book_title}\n\n`;
+
+      text += `## Table of Contents\n\n`;
+
+      data.chapters.forEach(chapter => {
+        text += `### ${chapter.chapter_title}\n\n`;
+        if (chapter.chapter_sections) {
+          chapter.chapter_sections.forEach(section => {
+            text += `- **${section.section_title}**: `;
+            text += `${section.section_description}\n\n`;
+          });
+        }
+      });
+
+      return text;
+    }
+
+    // Function to convert JSON data to plain text
+    function jsonChapterToPlainText(data) {
+      let text = data;
 
       return text;
     }
@@ -277,7 +338,7 @@
         }
 
         // Check for code block start/end
-        if (line.trim() === '```') {
+        if (line.trim().startsWith('```')) {
           inCodeBlock = !inCodeBlock;
           if (!inCodeBlock) {
             // End of code block
@@ -321,6 +382,13 @@
           let subheadingItem = {
             type: 'subheading',
             text: line.substring(4).trim()
+          };
+          addToCurrentContext(subheadingItem);
+        } else if (line.startsWith('#### ')) {
+          // Subheading
+          let subheadingItem = {
+            type: 'subsubheading',
+            text: line.substring(5).trim()
           };
           addToCurrentContext(subheadingItem);
         } else if (line.startsWith('- ')) {
@@ -441,6 +509,10 @@
               doc.fontSize(16).text(item.text, { underline: true });
               doc.moveDown();
               break;
+            case 'subsubheading':
+              doc.fontSize(14).text(item.text, { underline: true });
+              doc.moveDown();
+              break;
             case 'paragraph':
               doc.fontSize(12).text(item.text);
               doc.moveDown();
@@ -515,62 +587,13 @@
       }
     });
 
-    // Event listener for the assistant button
-    const assistants = [
-      { id: 'assistant_1', name: 'Assistant 1' },
-      { id: 'assistant_2', name: 'Assistant 2' },
-      { id: 'assistant_3', name: 'Assistant 3' },
-      // ... add more assistants as needed
-    ];
-
-    let selectedAssistant = null;
-
-    function populateAssistantMenu() {
-      const assistantMenu = document.getElementById('assistant-menu');
-      assistantMenu.innerHTML = ''; // Clear existing content
-
-      const ul = document.createElement('ul');
-      assistants.forEach(assistant => {
-        const li = document.createElement('li');
-        li.textContent = assistant.name;
-        li.dataset.assistantId = assistant.id;
-        // Highlight if selected
-        if (selectedAssistant && selectedAssistant.id === assistant.id) {
-          li.style.backgroundColor = '#e0e0e0';
-        }
-        li.addEventListener('click', () => {
-          selectedAssistant = assistant;
-          assistantMenu.style.display = 'none';
-          // Optionally update the assistant button to show selection
-          document.getElementById('assistant-button').style.backgroundColor = '#34A853'; // Google Green
-        });
-        ul.appendChild(li);
-      });
-
-      assistantMenu.appendChild(ul);
-    }
-
-    const assistantButton = document.getElementById('assistant-button');
-    assistantButton.addEventListener('click', () => {
-      const assistantMenu = document.getElementById('assistant-menu');
-      if (assistantMenu.style.display === 'block') {
-        assistantMenu.style.display = 'none';
-      } else {
-        populateAssistantMenu();
-        assistantMenu.style.display = 'block';
-      }
-    });
-
     // Hide the popup menus when clicking outside
     document.addEventListener('click', function(event) {
       const isClickInsideMenu = menuButton.contains(event.target) ||
-                                document.getElementById('popup-menu').contains(event.target) ||
-                                assistantButton.contains(event.target) ||
-                                document.getElementById('assistant-menu').contains(event.target);
+                                document.getElementById('popup-menu').contains(event.target);
 
       if (!isClickInsideMenu) {
         document.getElementById('popup-menu').style.display = 'none';
-        document.getElementById('assistant-menu').style.display = 'none';
       }
     });
 
@@ -580,49 +603,114 @@
       const inputField = document.getElementById('floating-input-field');
       const prompt = inputField.value.trim();
 
-      if (!selectedAssistant) {
-        alert('Please select an assistant before submitting your prompt.');
-        return;
-      }
-
       if (prompt) {
-        // Get the current JSON data
-        const currentJson = plainTextToJson(textEditor.value);
-
         // Prepare the request payload
         const payload = {
-          assistant_id: selectedAssistant.id,
           prompt: prompt,
-          book_data: currentJson,
         };
 
-        // Send the REST request
-        fetch('http://my-wrapper.local:3434', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        })
-          .then(response => response.json())
-          .then(data => {
-            // Handle the response from the wrapper
-            // For example, update the editor with new content
-            if (data && data.updated_book_data) {
-              // Convert updated book data back to plain text
-              const updatedText = jsonToPlainText(data.updated_book_data);
-              textEditor.value = updatedText;
-              // Trigger the input event to update the PDF
-              textEditor.dispatchEvent(new Event('input'));
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while communicating with the assistant.');
-          });
+        if (book_outline) {
 
-        // Clear the input field
-        inputField.value = '';
+          // Send the REST request
+          fetch('http://localhost:3434/books/chapters', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+            .then(async (response) => {
+              if (!response.body) {
+                throw new Error('ReadableStream not yet supported in this browser.');
+              }
+
+              const stream = jsonLinesToObjects(response.body);
+
+              const reader = stream.getReader();
+
+              let updatedBookData = ``;
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                  console.log(updatedBookData);
+                  // Convert updated book data back to plain text
+                  const updatedText = jsonChapterToPlainText(updatedBookData);
+                  textEditor.value += `\n\n`;
+                  textEditor.scrollTop = textEditor.scrollHeight;
+                  // Trigger the input event to update the PDF
+                  textEditor.dispatchEvent(new Event('input'));
+                  break;
+                }
+                if (value && value.updated_book_data) {
+                  // Merge or update the book data incrementally
+                  updatedBookData = `${updatedBookData}${value.updated_book_data}`;
+                  // Convert updated book data back to plain text
+                  const updatedText = value.updated_book_data;
+                  textEditor.value += `${updatedText}`;
+                  textEditor.scrollTop = textEditor.scrollHeight;
+                  console.log(updatedBookData);
+                }
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('An error occurred while communicating with the assistant.');
+            });
+
+          // Clear the input field
+          inputField.value = '';
+        } else {
+
+          // Send the REST request
+          fetch('http://localhost:3434/book-outlines', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+            .then(async (response) => {
+              if (!response.body) {
+                throw new Error('ReadableStream not yet supported in this browser.');
+              }
+
+              const stream = jsonLinesToObjects(response.body);
+
+              const reader = stream.getReader();
+
+              let updatedBookData = ``;
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                  book_outline = JSON.parse(updatedBookData);
+                  console.log(book_outline);
+                  // Convert updated book data back to plain text
+                  const updatedText = jsonOutlineToPlainText(JSON.parse(updatedBookData));
+                  textEditor.value = updatedText;
+                  // Trigger the input event to update the PDF
+                  textEditor.dispatchEvent(new Event('input'));
+                  break;
+                }
+                if (value && value.updated_book_data) {
+                  // Merge or update the book data incrementally
+                  updatedBookData = `${updatedBookData}${value.updated_book_data}`;
+                  // Convert updated book data back to plain text
+                  // const updatedText = updatedBookData;
+                  // textEditor.value = updatedText;
+                  console.log(updatedBookData);
+                }
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('An error occurred while communicating with the assistant.');
+            });
+
+          // Clear the input field
+          inputField.value = '';
+        }
       }
     });
 
