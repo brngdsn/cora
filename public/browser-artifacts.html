@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebAI</title>
+  <style>
+    /* Soft Dark Theme */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #2e2e2e;
+      color: #e0e0e0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #1f1f1f;
+      padding: 15px 30px;
+    }
+
+    .logo {
+      font-size: 24px;
+      color: #ffffff;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav a {
+      color: #e0e0e0;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    main {
+      display: flex;
+      height: calc(100vh - 60px); /* Adjusted for header height */
+    }
+
+    .left-column, .right-column {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #444;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 10px 20px;
+      background-color: #1f1f1f;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background-color: #333;
+      color: #e0e0e0;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      border: none;
+      background-color: #5a5aff;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .chat-message {
+      margin-bottom: 15px;
+    }
+
+    .chat-message p {
+      margin: 0;
+    }
+
+    .chat-message .sender {
+      font-weight: bold;
+    }
+
+    .right-column iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #5a5aff;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: #2e2e2e;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">WebAI</div>
+    <nav>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <div class="left-column">
+      <div class="chat-messages" id="chatMessages">
+        <!-- Chat messages will appear here -->
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button id="sendButton">Send</button>
+      </div>
+    </div>
+    <div class="right-column">
+      <iframe src="http://localhost:8080"></iframe>
+    </div>
+  </main>
+  <script type="module">
+    // ECMAScript 2024 Features Demonstration
+
+    // Import Assertions (ES2022, but including for modernity)
+    // Note: Actual module needs to be available; placeholder here
+    // import config from './config.json' assert { type: 'json' };
+
+    // Private Methods in Classes (ES2024 Candidate)
+    class Chat {
+      #messagesContainer;
+
+      constructor(containerId) {
+        this.#messagesContainer = document.getElementById(containerId);
+      }
+
+      addMessage(message, sender = 'You') {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message');
+        messageDiv.innerHTML = `<p class="sender">${sender}:</p><p>${message}</p>`;
+        this.#messagesContainer.appendChild(messageDiv);
+        this.#scrollToBottom();
+      }
+
+      #scrollToBottom() {
+        this.#messagesContainer.scrollTop = this.#messagesContainer.scrollHeight;
+      }
+    }
+
+    const chat = new Chat('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendButton = document.getElementById('sendButton');
+
+    sendButton.addEventListener('click', () => {
+      const message = chatInput.value.trim();
+      if (message) {
+        chat.addMessage(message);
+        chatInput.value = '';
+        // Handle sending message to server or bot here
+      }
+    });
+
+    chatInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        sendButton.click();
+      }
+    });
+
+    // Using Top-Level Await (ES2022, included for modernity)
+    async function initializeChat() {
+      // Placeholder for any asynchronous initialization
+      // e.g., fetching initial chat history
+    }
+
+    await initializeChat();
+  </script>
+</body>
+</html>
