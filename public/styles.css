@@ -209,3 +209,16 @@ textarea {
 textarea::placeholder {
   color: #a9a9a9; /* Muted gray placeholder */
 }
+
+.chat-message > p {
+  word-break: break-all;
+}
+
+.json-display {
+  white-space: pre-wrap; /* Preserves whitespace and line breaks */
+  font-family: monospace; /* Uses a monospace font for better readability */
+  background-color: #f5f5f5; /* Optional: Adds a light background */
+  padding: 10px; /* Optional: Adds padding for better appearance */
+  border: 1px solid #ddd; /* Optional: Adds a border */
+  border-radius: 4px; /* Optional: Rounds the corners */
+}

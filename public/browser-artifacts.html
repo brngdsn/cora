@@ -146,6 +146,9 @@
       <iframe src="http://localhost:8080"></iframe>
     </div>
   </main>
+  <!-- Include utility and conversion scripts -->
+  <script src="utils.js"></script>
+  <script src="converters.js"></script>
   <script type="module">
     // ECMAScript 2024 Features Demonstration
 
@@ -156,6 +159,7 @@
     // Private Methods in Classes (ES2024 Candidate)
     class Chat {
       #messagesContainer;
+      #feedElement;
 
       constructor(containerId) {
         this.#messagesContainer = document.getElementById(containerId);
@@ -164,9 +168,18 @@
       addMessage(message, sender = 'You') {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chat-message');
-        messageDiv.innerHTML = `<p class="sender">${sender}:</p><p>${message}</p>`;
+        messageDiv.innerHTML = `<p class="sender">${sender}:</p><p class="json-display">${message}</p>`;
         this.#messagesContainer.appendChild(messageDiv);
         this.#scrollToBottom();
+        this.#feedElement = messageDiv.childNodes[1];
+      }
+
+      feed(data, replace = false) {
+        if (replace) {
+          this.#feedElement.innerText = data;
+        } else {
+          this.#feedElement.innerText += data;
+        }
       }
 
       #scrollToBottom() {
@@ -184,6 +197,7 @@
         chat.addMessage(message);
         chatInput.value = '';
         // Handle sending message to server or bot here
+        submit_message(message);
       }
     });
 
@@ -197,6 +211,53 @@
     async function initializeChat() {
       // Placeholder for any asynchronous initialization
       // e.g., fetching initial chat history
+    }
+
+    function submit_message (message) {
+        chat.addMessage('', 'WebUI');
+        // Send the REST request
+        fetch('http://localhost:3434/software-architecture', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt: message }),
+        })
+          .then(async (response) => {
+            if (!response.body) {
+              throw new Error('ReadableStream not yet supported in this browser.');
+            }
+
+            const stream = jsonLinesToObjects(response.body);
+
+            const reader = stream.getReader();
+
+            let updatedArchitecture = ``;
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                const architecture = JSON.parse(updatedArchitecture);
+                console.log(architecture);
+                // Convert updated book data back to plain text
+                const updatedText = JSON.stringify(architecture, null, 2);
+                chat.feed(updatedText, true);
+                break;
+              }
+              if (value && value.value) {
+                // Merge or update the book data incrementally
+                updatedArchitecture = `${updatedArchitecture}${value.value}`;
+                // Convert updated book data back to plain text
+                const updatedText = value.value;
+                chat.feed(updatedText);
+                console.log(updatedArchitecture);
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while communicating with the assistant.');
+          });
     }
 
     await initializeChat();
