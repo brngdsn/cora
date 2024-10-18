@@ -2,3 +2,5 @@ node_modules/
 package-lock.json
 .env
 output.pdf
+workspace/
+

@@ -88,6 +88,17 @@
       cursor: pointer;
     }
 
+    .chat-input button.build {
+      margin-left: 10px;
+      padding: 10px 20px;
+      border: none;
+      background-color: #81ff5a;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
     .chat-message {
       margin-bottom: 15px;
     }
@@ -119,6 +130,35 @@
     ::-webkit-scrollbar-track {
       background-color: #2e2e2e;
     }
+
+    /* Spinner Styles */
+    .spinner {
+      border: 4px solid #f3f3f3; /* Light gray */
+      border-top: 4px solid #444444; /* Dark gray */
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* JSON Display Styles */
+    .json-display {
+      white-space: pre-wrap; /* Preserves whitespace and line breaks */
+      font-family: monospace; /* Uses a monospace font for better readability */
+      padding: 10px; /* Optional: Adds padding for better appearance */
+      border: 1px solid #ddd; /* Optional: Adds a border */
+      border-radius: 4px; /* Optional: Rounds the corners */
+    }
+
+    .chat-message .sender {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -140,10 +180,11 @@
       <div class="chat-input">
         <input type="text" id="chatInput" placeholder="Type a message...">
         <button id="sendButton">Send</button>
+        <button id="buildButton" class="build">Build</button>
       </div>
     </div>
     <div class="right-column">
-      <iframe src="http://localhost:8080"></iframe>
+      <iframe id="app-frame" src="http://localhost:8080/" style="all: initial;height:100%;width:100%;"></iframe>
     </div>
   </main>
   <!-- Include utility and conversion scripts -->
@@ -158,6 +199,7 @@
 
     // Private Methods in Classes (ES2024 Candidate)
     class Chat {
+      #numMessages = 0;
       #messagesContainer;
       #feedElement;
 
@@ -168,18 +210,39 @@
       addMessage(message, sender = 'You') {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chat-message');
-        messageDiv.innerHTML = `<p class="sender">${sender}:</p><p class="json-display">${message}</p>`;
+        if (message === '' && sender === 'WebAI') {
+          // Show spinner
+          messageDiv.innerHTML = `<p class="sender">${sender}:</p><div class="spinner"></div>`;
+        } else {
+          messageDiv.innerHTML = `<p class="sender">${sender}:</p><p class="json-display">${message}</p>`;
+        }
         this.#messagesContainer.appendChild(messageDiv);
+        this.#numMessages++;
         this.#scrollToBottom();
-        this.#feedElement = messageDiv.childNodes[1];
+        // Update feedElement to point to the content we want to update
+        this.#feedElement = messageDiv.querySelector('.json-display') || messageDiv.querySelector('.spinner');
+      }
+
+      getNumMessages() {
+        return this.#numMessages;
       }
 
       feed(data, replace = false) {
-        if (replace) {
-          this.#feedElement.innerText = data;
+        if (this.#feedElement.classList.contains('spinner')) {
+          // Replace spinner with message
+          const newContent = document.createElement('p');
+          newContent.classList.add('json-display');
+          newContent.innerText = data;
+          this.#feedElement.replaceWith(newContent);
+          this.#feedElement = newContent;
         } else {
-          this.#feedElement.innerText += data;
+          if (replace) {
+            this.#feedElement.innerText = data;
+          } else {
+            this.#feedElement.innerText += data;
+          }
         }
+        this.#scrollToBottom();
       }
 
       #scrollToBottom() {
@@ -187,9 +250,15 @@
       }
     }
 
+    let app_id = null, architecture = null;
     const chat = new Chat('chatMessages');
     const chatInput = document.getElementById('chatInput');
     const sendButton = document.getElementById('sendButton');
+    const buildButton = document.getElementById('buildButton');
+
+    function refresh_app_view () {
+      document.querySelector(`#app-frame`).setAttribute('src', `http://localhost:8080/app-${app_id}/index.html`);
+    }
 
     sendButton.addEventListener('click', () => {
       const message = chatInput.value.trim();
@@ -198,6 +267,22 @@
         chatInput.value = '';
         // Handle sending message to server or bot here
         submit_message(message);
+      }
+    });
+
+    buildButton.addEventListener('click', async () => {
+      if (architecture && architecture.files) {
+        for (let f = 0; f < architecture.files.length; f++) {
+          const file = architecture.files[f];
+          const message = `implement the \`${file}\` file`;
+          if (message) {
+            chat.addMessage(message);
+            chatInput.value = '';
+            // Handle sending message to server or bot here
+            await submit_message(message);
+            await new Promise(r => setTimeout(r, 5000));
+          }
+        }
       }
     });
 
@@ -214,9 +299,10 @@
     }
 
     function submit_message (message) {
-        chat.addMessage('', 'WebUI');
+      if (chat.getNumMessages() === 1) {
+        chat.addMessage('', 'WebAI');
         // Send the REST request
-        fetch('http://localhost:3434/software-architecture', {
+        return fetch('http://localhost:3434/software-architecture', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -237,14 +323,16 @@
             while (true) {
               const { done, value } = await reader.read();
               if (done) {
-                const architecture = JSON.parse(updatedArchitecture);
+                architecture = JSON.parse(updatedArchitecture);
                 console.log(architecture);
                 // Convert updated book data back to plain text
                 const updatedText = JSON.stringify(architecture, null, 2);
                 chat.feed(updatedText, true);
+                refresh_app_view();
                 break;
               }
               if (value && value.value) {
+                app_id = value.app_id;
                 // Merge or update the book data incrementally
                 updatedArchitecture = `${updatedArchitecture}${value.value}`;
                 // Convert updated book data back to plain text
@@ -258,6 +346,53 @@
             console.error('Error:', error);
             alert('An error occurred while communicating with the assistant.');
           });
+      } else {
+        chat.addMessage('', 'WebAI');
+        // Send the REST request
+        return fetch('http://localhost:3434/software-developer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt: message }),
+        })
+          .then(async (response) => {
+            if (!response.body) {
+              throw new Error('ReadableStream not yet supported in this browser.');
+            }
+
+            const stream = jsonLinesToObjects(response.body);
+
+            const reader = stream.getReader();
+
+            let updatedCode = ``;
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                const architecture = JSON.parse(updatedCode);
+                console.log(architecture);
+                // Convert updated book data back to plain text
+                const updatedText = JSON.stringify(architecture, null, 2);
+                chat.feed(updatedText, true);
+                refresh_app_view();
+                break;
+              }
+              if (value && value.value) {
+                // Merge or update the book data incrementally
+                updatedCode = `${updatedCode}${value.value}`;
+                // Convert updated book data back to plain text
+                const updatedText = value.value;
+                chat.feed(updatedText);
+                console.log(updatedCode);
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while communicating with the assistant.');
+          });
+      }
     }
 
     await initializeChat();
