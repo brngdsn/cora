@@ -8,4 +8,4 @@ async function chat(client, messages) {
   return message;
 }
 
-export default { chat };
+export { chat };

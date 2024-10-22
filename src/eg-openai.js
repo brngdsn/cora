@@ -1,9 +1,9 @@
 console.clear();
 import dotenv from 'dotenv'; dotenv.config();
 import path from 'path';
-import OpenAI from 'openai';
 import __dirname from './__dirname.js';
 import parseJson from './parse-json.js';
+import AIAPIFactory from './ai-client/ai-api-factory.js';
 import writeData from './write-data.js';
 import { chill } from './chill.js';
 import { chat } from './chat.js';
@@ -33,11 +33,14 @@ const user_stories = `
 
 async function main() {
   const messages = [
-    { role: 'user', content: arch_prompt },
+    { role: 'system', content: arch_prompt },
     { role: 'user', content: user_stories }
   ];
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const arch_message = await chat(client, messages);
+  const client = await AIAPIFactory.create({
+    host: `http://localhost:11434`,
+    format: `json`,
+  });
+  const arch_message = await client.chat(messages);
   const { content: arch_message_content } = arch_message;
   const arch_json = parseJson(arch_message_content);
   const { working_dir, mermaid_arch_diagram, files } = arch_json;
@@ -49,7 +52,7 @@ async function main() {
     const impl_prompt = `implement the \`${file}\` file.`;
     messages.push(arch_message);
     messages.push({ role: 'user', content: impl_prompt })
-    const dev_message = await chat(client, messages);
+    const dev_message = await client.chat(messages);
     const { content: dev_message_content } = dev_message;
     const file_content = dev_message_content;
     await writeData(file_path, file_content);    

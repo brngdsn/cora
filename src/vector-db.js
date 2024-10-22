@@ -61,4 +61,4 @@ async function queryRelevantMessages(conversation_id, content, topN) {
   return uniqueMessages.slice(0, topN);
 }
 
-export default { insertEmbedding, queryRelevantMessages };
+export { insertEmbedding, queryRelevantMessages };

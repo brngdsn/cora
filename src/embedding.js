@@ -10,4 +10,4 @@ async function createEmbedding(client, content) {
   return embedding;
 }
 
-export default { createEmbedding };
+export { createEmbedding };

@@ -12,7 +12,7 @@ create database cora;
 
 drop table if exists messages;
 
-CREATE EXTENSION vector;
+CREATE EXTENSION if not exists vector;
 
 create user cora_user with encrypted password 'cora';
 grant all privileges on database cora to cora_user;

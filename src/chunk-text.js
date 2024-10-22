@@ -15,4 +15,4 @@ function chunkText(text, maxTokens = 800, overlap = 200) {
   return chunks;
 }
 
-export default { chunkText };
+export { chunkText };
