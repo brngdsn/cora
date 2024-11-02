@@ -26,11 +26,12 @@ class OllamaClient extends BaseAIClient {
    */
   async chat(messages, options = {}) {
     try {
+      console.log(`Messages: ${messages.length}`);
       const response = await this.client.chat({
         model: options.model || 'llama3.2',
         max_tokens: options.max_tokens || 150,
         temperature: options.temperature || 0.7,
-        format: `json`,
+        format: options.format || undefined,
         stream: true,
         messages: messages || [{
             role: 'user',

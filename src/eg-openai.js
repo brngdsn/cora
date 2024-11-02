@@ -38,19 +38,21 @@ async function main() {
   ];
   const client = await AIAPIFactory.create({
     host: `http://localhost:11434`,
-    format: `json`,
   });
-  const arch_message = await client.chat(messages);
+  const arch_message = await client.chat(messages, {
+    format: `json`
+  });
   const { content: arch_message_content } = arch_message;
+  messages.push(arch_message);
   const arch_json = parseJson(arch_message_content);
   const { working_dir, mermaid_arch_diagram, files } = arch_json;
   const app = new Date().getTime();
-  messages.push({ role: 'user', content: dev_prompt });
+  messages.push({ role: 'system', content: dev_prompt });
   for (let f = 0; f < files.length; f++) {
     const file = files[f];
     const file_path = path.join(__dirname, `./workspace/app-${app}`, file);
-    const impl_prompt = `implement the \`${file}\` file.`;
-    messages.push(arch_message);
+    const impl_prompt = `implement the \`${file}\` file in plain text only.`;
+    console.log(impl_prompt);
     messages.push({ role: 'user', content: impl_prompt })
     const dev_message = await client.chat(messages);
     const { content: dev_message_content } = dev_message;
